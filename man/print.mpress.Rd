@@ -13,7 +13,7 @@ makes a table with the runtime information for the samples investigated an mpres
 }
 \examples{
 library(mpress);
-#Loading in the Chinese metadata file
+#Loading in the microbiome files
 data(ChinaData);
 data(SpainData);
 

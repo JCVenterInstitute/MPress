@@ -8,8 +8,8 @@
 #' @param alpha Alpha value used to test the microbiome differences. Default is 0.05 
 #' @param beta Beta value used to test proportion of estimated samples that contain significant differences. Default is 0.95
 #' @param test.type String giving the statistic to test the between the microbiome samples. Default is "permanova"
-#' @param dist.metric String giving the distance metric to use between the microbiome samples. Default"unifrac" 
-#' @param deseq.val Value to use for the DESeq2 run to trim the taxa. 0 = use all taxa (Default), 0 < x < 1, use the value as a FDR cutoff; x >=1, use the top scoring X values by FDR
+#' @param dist.metric String giving the distance metric to use between the microbiome samples. Default "bray" (Bray-Curtis). Available options can be seen with distanceMethodList. 
+#' @param deseq.val Value to use for the DESeq2 run to trim the taxa. if the value is 0,use all taxa (Default); if the value is between 0 and 1, all taxa with an FDR below the value will be selected; otherwise, if the value is >=1, that number of top taxa by FDR will be selected
 #' @param n.rep Maximum number of replicates to run before final check if above the beta threshold. Default = 100.
 #' @param burn.in Value to burning in for the binomial test. Default is 10
 #' @param verbose Flag to prints intermediate values to the screen. Default = F
@@ -19,8 +19,8 @@
 #' @return Returns a class MPrESS variable with the sample number in addition to runtime information for use in verification
 #' @examples #The following data is from Chavda et al 2016 which phylotyped Enterobacter genomes
 #'
-#' #Additional printing and plotting options are availible with plot() and print(). For more information refer to ?plot.ggrasp and ?print.ggrasp
-#'@examples #The following data is from Chavda et al 2016 using Microbiome data from multiple sites in China
+#' #Additional printing and plotting options are availible with plot() and print(). For more information refer to ?plot.mpress and ?print.mpress
+#'@examples #The following data is from Zhang et al 2015 using Microbiome data from multiple sites in China
 #' # Our example uses the data underpinning the tree shown in Figure 2
 #' 
 #' library(mpress);
@@ -39,7 +39,7 @@
 #' plot(china.power)
 #' @export
 
-power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha = 0.05, beta = 0.95, test.type="permanova", dist.metric="unifrac", deseq.val = 0, n.rep=100, burn.in = 10, verbose = F, binom = F, switch.val = 0, seed.val=0)
+power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha = 0.05, beta = 0.95, test.type="permanova", dist.metric="bray", deseq.val = 0, n.rep=100, burn.in = 10, verbose = T, binom = F, switch.val = 0, seed.val=0)
 {
   if (seed.val != 0)
   {
@@ -56,6 +56,17 @@ power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha 
     cat(paste("Cannot find metadata variable ", metadata.var," in in.phyloseq. Quitting..."));
         return(NULL);
   }
+  if (length(metadata.vals) > 2)
+  {
+    cat("Only two metadata variable values can be compared...")
+    return(NULL)
+  }
+  
+  if (length(metadata.vals) < 2)
+  {
+    cat("Two metadata variable values are  required...")
+    return(NULL)
+  }
   #Step two, get minimal counts for each metadata.val
   min.cnt = .get_min_metadata_counts(in.phyloseq, metadata.var, metadata.vals);
   if (min.cnt <= 0)
@@ -66,7 +77,7 @@ power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha 
   #Step three: trim by deseq2 if needed
   if (deseq.val > 0)
   {
-    in.phyloseq = .trim_taxa_by_deseq(in.phyloseq, metadata.var, metadata.vals, deseq.val);
+    in.phyloseq = .trim_taxa_by_deseq(in.phyloseq, metadata.var, metadata.vals, deseq.val, verbose);
   }
   #Step three get the beta value for the first sample number
   cur.num = start.n;
@@ -75,7 +86,11 @@ power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha 
   shape = NA;
   alpha.list = c();
   est.type = "sample";
-  ret.df = data.frame();
+  if (verbose==TRUE)
+  {
+    cat(paste("# of Samples", "# of Replicates", "Estimation Type", "Mean p-value",  "Power", "# of Signifcant Replicates", "\n", sep=","))
+  }
+  ret.df = data.frame(stringsAsFactors=F);
   while(length(p.val) == 0 | mean(p.val < alpha) < beta)
   {
     alpha.list = c();
@@ -89,7 +104,6 @@ power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha 
       if ((cur.num > min.cnt | (cur.num > switch.val & switch.val != 0) ) & est.type =="sample")
       {
         est.type = "simulation";
-        cur.num = cur.num - 5;
         shape = .get_sim_shapes(in.phyloseq, metadata.var, metadata.vals)
       }
       if (est.type == "sample")
@@ -101,7 +115,7 @@ power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha 
         tmp.phyloseq = .get_simulated_otus(in.phyloseq, metadata.var, metadata.vals, cur.num, shape)
       }
       alpha.list = c(alpha.list, estimate_richness(tmp.phyloseq)$Shannon);
-      dist.val = .get_distance_value(tmp.phyloseq, dist.metric)
+      dist.val = .get_distance_value(tmp.phyloseq, tolower(dist.metric))
       test.1 <- .get_test_pvalue(tmp.phyloseq, metadata.var, dist.val, test.type);
       run.num = run.num + 1;
       p.val = c(p.val, test.1);
@@ -113,7 +127,7 @@ power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha 
     }
     if (verbose==TRUE)
     {
-      cat(paste(cur.num, run.num, est.type, n.rep, burn.in, p.v,  mean(p.val < alpha), sum(p.val < alpha), "\n"))
+      cat(paste(cur.num, run.num, est.type, mean(p.val),  mean(p.val < alpha), sum(p.val < alpha), "\n"))
     }
     ret.df = rbind(ret.df, data.frame(num.samples = cur.num, num.rep = run.num, estimation.type = est.type, p.val.mean = mean(p.val), p.val.sd = sd(p.val), power.val = mean(p.val < alpha), alpha.mean = mean(alpha.list), alpha.sd = sd(alpha.list)))
     cur.num = cur.num + 1;
@@ -145,7 +159,7 @@ setMethod("show", "mpress", function(object)summary(object))
 #' 
 #' @examples
 #' library(mpress);
-#' #Loading in the Chinese metadata file
+#' #Loading in the microbiome files
 #' data(ChinaData);
 #' data(SpainData);
 #'
@@ -165,11 +179,11 @@ print.mpress <- function(x)
 #' 
 #' @examples
 #' library(mpress);
-#' #Loading in the Chinese metadata file
+#' #Loading in the  microbiome files
 #' data(ChinaData);
 #' data(SpainData);
 #'
-#` china.trim.power = power.est(china.trim, "State",c("Yannan", "Guangxi Zhuang"));
+#` china.trim.power = power.est(china.trim, "State",c("Yunnan", "Guangxi Zhuang"));
 # '#Use summary() to examine the data loaded
 #' summary(china.trim.power)
 #' @export
@@ -183,7 +197,7 @@ summary.mpress <- function(x)
 #' 
 #' @examples
 #' library(mpress);
-#' #Loading in the Chinese metadata file
+#' #Loading in the  microbiome files
 #' data(ChinaData);
 #' data(SpainData);
 #'
@@ -195,27 +209,38 @@ summary.mpress <- function(x)
 #' @export
 plot.mpress <- function(x)
 {
-  g.1 <- ggplot(data=x@runtime.info, aes(x = num.samples, y = p.val.mean, color="Mean P-Value"))+geom_smooth() + geom_smooth(aes(x = num.samples, y = power.val, color="Power"))+xlab("Sample Number")+ylab("P-value/Power")
+  g.1 <- ggplot(data=x@runtime.info, aes(x = num.samples, y = p.val.mean, group=estimation.type, linetype = estimation.type, color="Mean P-Value"))+geom_smooth() + geom_smooth(aes(x = num.samples, y = power.val, color="Power", group=estimation.type, linetype = estimation.type))+xlab("Sample Number")+ylab("P-value/Power")
+  g.1 <- g.1 + geom_point(data=x@runtime.info, aes(x = num.samples, y = power.val, shape=estimation.type))
   return(g.1)
 }
 
 
-.trim_taxa_by_deseq = function(test.phylo, metadata.var, metadata.vals, alpha)
+.trim_taxa_by_deseq = function(test.phylo, metadata.var, metadata.vals, alpha, verbose.in)
 {
   x1 = c();
-  test.phylo.2 = test.phylo;
-  cnt.table <- data.frame(otu_table(test.phylo), stringsAsFactors=F);
-  tax.table <- data.frame(tax_table(test.phylo), stringsAsFactors=F);
-  tmp.dds <- DESeqDataSetFromMatrix(cnt.table, colData=data.frame(sample_data(test.phylo)), design = as.formula(paste("~", metadata.var)));
+  if (verbose.in == TRUE)
+  {
+    cat(paste("Starting DESeq...\n", sep=""))
+  }
+  test.phylo.2 = prune_samples(sample_names(test.phylo)[(sapply(sample_data(test.phylo)[,metadata.var], function(x){ x %in% metadata.vals}))], test.phylo);
+  cnt.table <- data.frame(otu_table(test.phylo.2), stringsAsFactors=F);
+  tax.table <- data.frame(tax_table(test.phylo.2), stringsAsFactors=F);
+  metadata.table <- data.frame(var = sample_data(test.phylo.2)[,metadata.var]);
+  new.metadata.vals = gsub(pattern = "([^0-9A-Za-z\\_\\.]+)", "", metadata.vals)
+  metadata.table[,metadata.var] = gsub(pattern = "([^0-9A-Za-z\\_\\.]+)", "", metadata.table[,metadata.var])
+  
+  tmp.dds <- DESeqDataSetFromMatrix(cnt.table, colData=metadata.table, design = as.formula(paste("~", metadata.var)));
   tmp.dds.run <- DESeq(tmp.dds, fitType = "local", quiet= T)
   tmp.dds.res <- results(tmp.dds.run);
   hit = 0;
+  max.pval = -1;
   if (alpha > 0 & alpha < 1)
   {
     if (sum(tmp.dds.res$padj < alpha & !is.na(tmp.dds.res$padj)) >1)
     {
       hit = 1;
       tmp.list = rownames(tmp.dds.res)[tmp.dds.res$padj < alpha & !is.na(tmp.dds.res$padj)];
+      max.pval = max(tmp.dds.res$padj[tmp.dds.res$padj < alpha & !is.na(tmp.dds.res$padj)]);
       test.phylo.2 <- prune_taxa(taxa_names(test.phylo) %in% tmp.list, test.phylo);
     }
   }
@@ -223,7 +248,12 @@ plot.mpress <- function(x)
   {
     hit = 1;
     tmp.list = rownames(tmp.dds.res)[order(tmp.dds.res$padj, na.last=T)][1:alpha];
+    max.pval = sort(tmp.dds.res$padj, na.last=T)[alpha];
     test.phylo.2 <- prune_taxa(taxa_names(test.phylo) %in% tmp.list, test.phylo);
+  }
+  if (verbose.in == TRUE)
+  {
+    cat(paste("DESeq Finished...\nTrimmed down to ", length(tmp.list), " taxa with a max FDR of ", max.pval,"\n\n\n", sep=""))
   }
   return(test.phylo.2);
 }
@@ -293,6 +323,7 @@ plot.mpress <- function(x)
 {
   d.list = distanceMethodList;
   dist.val = NA;
+  test.phylo = transform_sample_counts(test.phylo, function(OTU) OTU /sum(OTU) )
   if (dist.type %in% d.list$vegdist)
   {
     dist.val = vegdist(t(otu_table(test.phylo)), dist.type);
@@ -303,6 +334,7 @@ plot.mpress <- function(x)
   }
   return(dist.val);
 }
+
 .get_test_pvalue = function(test.phylo, metadata.var, dist.val, test.type)
 {
   p.val = NA;

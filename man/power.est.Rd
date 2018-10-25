@@ -6,8 +6,8 @@
 \usage{
 power.est(in.phyloseq, metadata.var, metadata.vals, start.n = 5,
   alpha = 0.05, beta = 0.95, test.type = "permanova",
-  dist.metric = "unifrac", deseq.val = 0, n.rep = 100, burn.in = 10,
-  verbose = F, binom = F, switch.val = 0, seed.val = 0)
+  dist.metric = "bray", deseq.val = 0, n.rep = 100, burn.in = 10,
+  verbose = T, binom = F, switch.val = 0, seed.val = 0)
 }
 \arguments{
 \item{in.phyloseq}{Required. The collection of microbiome samples to use. Required to be a class phyloseq data}
@@ -22,9 +22,9 @@ power.est(in.phyloseq, metadata.var, metadata.vals, start.n = 5,
 
 \item{test.type}{String giving the statistic to test the between the microbiome samples. Default is "permanova"}
 
-\item{dist.metric}{String giving the distance metric to use between the microbiome samples. Default"unifrac"}
+\item{dist.metric}{String giving the distance metric to use between the microbiome samples. Default "bray" (Bray-Curtis). Available options can be seen with distanceMethodList.}
 
-\item{deseq.val}{Value to use for the DESeq2 run to trim the taxa. 0 = use all taxa (Default), 0 < x < 1, use the value as a FDR cutoff; x >=1, use the top scoring X values by FDR}
+\item{deseq.val}{Value to use for the DESeq2 run to trim the taxa. if the value is 0,use all taxa (Default); if the value is between 0 and 1, all taxa with an FDR below the value will be selected; otherwise, if the value is >=1, that number of top taxa by FDR will be selected}
 
 \item{n.rep}{Maximum number of replicates to run before final check if above the beta threshold. Default = 100.}
 
@@ -49,8 +49,8 @@ power.calc() calculates the number of samples to dectect a difference between mi
 \examples{
 #The following data is from Chavda et al 2016 which phylotyped Enterobacter genomes
 
-#Additional printing and plotting options are availible with plot() and print(). For more information refer to ?plot.ggrasp and ?print.ggrasp
-#The following data is from Chavda et al 2016 using Microbiome data from multiple sites in China
+#Additional printing and plotting options are availible with plot() and print(). For more information refer to ?plot.mpress and ?print.mpress
+#The following data is from Zhang et al 2015 using Microbiome data from multiple sites in China
 # Our example uses the data underpinning the tree shown in Figure 2
 
 library(mpress);

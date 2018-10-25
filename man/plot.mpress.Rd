@@ -13,7 +13,7 @@ makes a ggplot with the p-value and power for all the samples investigated an mp
 }
 \examples{
 library(mpress);
-#Loading in the Chinese metadata file
+#Loading in the  microbiome files
 data(ChinaData);
 data(SpainData);
 

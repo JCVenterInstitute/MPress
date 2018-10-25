@@ -5,7 +5,7 @@
 \title{summary.mpress
 writes the power value and the estimation type to the screen}
 \usage{
-summary.mpress(x)
+\method{summary}{mpress}(x)
 }
 \description{
 summary.mpress
@@ -13,7 +13,7 @@ writes the power value and the estimation type to the screen
 }
 \examples{
 library(mpress);
-#Loading in the Chinese metadata file
+#Loading in the  microbiome files
 data(ChinaData);
 data(SpainData);
 
