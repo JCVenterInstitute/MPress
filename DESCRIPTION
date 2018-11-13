@@ -7,4 +7,4 @@ Description: Given a phyloseq representation of a microbiome complete with metad
 Depends: R(>= 3.4.0), ggplot2, phytools, phyloseq(>= 1.16), vegan, HMP, ape, DESeq2
 License: GPL-2
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

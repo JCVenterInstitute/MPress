@@ -5,9 +5,9 @@
 \title{power.calc}
 \usage{
 power.est(in.phyloseq, metadata.var, metadata.vals, start.n = 5,
-  alpha = 0.05, beta = 0.95, test.type = "permanova",
-  dist.metric = "bray", deseq.val = 0, n.rep = 100, burn.in = 10,
-  verbose = T, binom = F, switch.val = 0, seed.val = 0)
+  alpha = 0.05, beta = 0.95, dist.metric = "bray", deseq.val = 0,
+  n.rep = 100, burn.in = 10, verbose = T, binom = F,
+  switch.val = 0, seed.val = 0)
 }
 \arguments{
 \item{in.phyloseq}{Required. The collection of microbiome samples to use. Required to be a class phyloseq data}
@@ -19,8 +19,6 @@ power.est(in.phyloseq, metadata.var, metadata.vals, start.n = 5,
 \item{alpha}{Alpha value used to test the microbiome differences. Default is 0.05}
 
 \item{beta}{Beta value used to test proportion of estimated samples that contain significant differences. Default is 0.95}
-
-\item{test.type}{String giving the statistic to test the between the microbiome samples. Default is "permanova"}
 
 \item{dist.metric}{String giving the distance metric to use between the microbiome samples. Default "bray" (Bray-Curtis). Available options can be seen with distanceMethodList.}
 

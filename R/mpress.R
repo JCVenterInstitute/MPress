@@ -45,7 +45,7 @@ power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha 
     set.seed(seed.val)
   }
   #Set test type to permanova as currently the only option. Maybe be changed to a input variable if more tests are added later
-  test.type="permanova",
+  test.type="permanova";
   #Step one, verify variables and that metadata.var and metadata.vals are in the 
   if (is.null(phyloseq) | class(in.phyloseq) != "phyloseq")
   {
