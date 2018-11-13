@@ -7,7 +7,6 @@
 #' @param start. The sample size at which to start the tests. Default is 5.
 #' @param alpha Alpha value used to test the microbiome differences. Default is 0.05 
 #' @param beta Beta value used to test proportion of estimated samples that contain significant differences. Default is 0.95
-#' @param test.type String giving the statistic to test the between the microbiome samples. Default is "permanova"
 #' @param dist.metric String giving the distance metric to use between the microbiome samples. Default "bray" (Bray-Curtis). Available options can be seen with distanceMethodList. 
 #' @param deseq.val Value to use for the DESeq2 run to trim the taxa. if the value is 0,use all taxa (Default); if the value is between 0 and 1, all taxa with an FDR below the value will be selected; otherwise, if the value is >=1, that number of top taxa by FDR will be selected
 #' @param n.rep Maximum number of replicates to run before final check if above the beta threshold. Default = 100.
@@ -39,12 +38,14 @@
 #' plot(china.power)
 #' @export
 
-power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha = 0.05, beta = 0.95, test.type="permanova", dist.metric="bray", deseq.val = 0, n.rep=100, burn.in = 10, verbose = T, binom = F, switch.val = 0, seed.val=0)
+power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha = 0.05, beta = 0.95, dist.metric="bray", deseq.val = 0, n.rep=100, burn.in = 10, verbose = T, binom = F, switch.val = 0, seed.val=0)
 {
   if (seed.val != 0)
   {
     set.seed(seed.val)
   }
+  #Set test type to permanova as currently the only option. Maybe be changed to a input variable if more tests are added later
+  test.type="permanova",
   #Step one, verify variables and that metadata.var and metadata.vals are in the 
   if (is.null(phyloseq) | class(in.phyloseq) != "phyloseq")
   {
@@ -104,13 +105,14 @@ power.est = function(in.phyloseq, metadata.var, metadata.vals, start.n=5, alpha 
       if ((cur.num > min.cnt | (cur.num > switch.val & switch.val != 0) ) & est.type =="sample")
       {
         est.type = "simulation";
-        shape = .get_sim_shapes(in.phyloseq, metadata.var, metadata.vals)
+		shape = .get_sim_shapes(in.phyloseq, metadata.var, metadata.vals);
+		
       }
       if (est.type == "sample")
       {
         tmp.phyloseq = .get_sampled_otus(in.phyloseq, k = cur.num, metadata.var, metadata.vals);
       }
-      if (est.type == "simulation")
+	  if (est.type == "simulation")
       {
         tmp.phyloseq = .get_simulated_otus(in.phyloseq, metadata.var, metadata.vals, cur.num, shape)
       }
@@ -319,6 +321,9 @@ plot.mpress <- function(x)
   test.phylo = prune_samples(sample_names(in.phylo) %in% n.1, in.phylo)
   return(test.phylo)
 }
+
+
+
 .get_distance_value = function(test.phylo, dist.type)
 {
   d.list = distanceMethodList;
