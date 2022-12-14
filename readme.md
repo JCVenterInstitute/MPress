@@ -4,16 +4,16 @@ MPrESS (Microbiome Power Estimation with Sampling and Simulation) is an R-packag
 
 ## Installing MPrESS
 
-MPrESS can be installed using the install_git command in devtools. However this will not install the command line script, which needs to be installed separately as shown below. The example data is also pulled for demonstration purposes.
+MPrESS can be installed using the install_git command in devtools.  The example data is also pulled for demonstration purposes.
 ```
 R
 >library(devtools)
 >library(git2r)
->install_git("https://github.com/JCVenterInstitute/MPrESS.git", branch="master", credentials = cred_user_pass(username, password))
+>install_git("https://github.com/JCVenterInstitute/MPrESS.git")
 >quit()
 ```
 
-if this is not working, it is also the options to download the mpress_0.9.tar.gz file from github and install MPrESS from this
+if this is not working, it is also the possible to download the mpress_1.0.tar.gz file from github and install MPrESS from the zip file.
 
 ## Using MPrESS
 
@@ -44,7 +44,4 @@ To start with, simply load the library and Spain IBS and China Geographic
 
 ##Citing MPrESS
 
-When using MPrESS in your analysis, please cite MPrESS as follows:
-```
-
-```
+When using MPrESS in your analysis, please cite MPrESS using the github page.
