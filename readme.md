@@ -13,7 +13,7 @@ R
 >quit()
 ```
 
-if this is not working, it is also the possible to download the mpress_1.0.tar.gz file from github and install MPrESS from the zip file.
+if this is not working, it is also the possible to download mpress_1.0.0.tar.gz from github and install MPrESS from the zip file.
 
 ## Using MPrESS
 
